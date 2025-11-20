@@ -8,41 +8,31 @@
 import SwiftUI
 
 struct HomeView: View {
-    @State private var selectedDate = Date()
-    
-    // Mock data corrected: use `dream:` instead of `description:` and add interpretations
-    private var dreams: [Dream] = [
-        Dream(dateKey: "20251118", input: "I was walking through a misty forest hearing distant whispers.", interpretation: "Seeking guidance / introspection", title: "Walking in the woods", imageName: "dream1"),
-        Dream(dateKey: "20251118", input: "I soared above skyscrapers feeling completely free.", interpretation: "Freedom and escape from pressure", title: "Flying over the city", imageName: "dream2"),
-        Dream(dateKey: "20251118", input: "Endless shelves of books, but all pages were blank.", interpretation: "Hunger for knowledge or blocked expression", title: "In the library", imageName: "dream2"),
-        Dream(dateKey: "20251118", input: "Fragments of symbols I couldn't decode.", interpretation: nil, title: "Interpreting...", imageName: "nodream")
-    ]
-    
-    // Date key formatter (reuse to avoid recreation)
-    private static let dateKeyFormatter: DateFormatter = {
+    @EnvironmentObject var dreamVM: DreamViewModel
+        
+    // Formatter reused for comparing dateKey
+    private static let keyFormatter: DateFormatter = {
         let f = DateFormatter()
-        f.calendar = Calendar(identifier: .gregorian)
-        f.locale = Locale(identifier: "en_US_POSIX")
+        f.calendar = .init(identifier: .gregorian)
+        f.locale = .init(identifier: "en_US_POSIX")
         f.dateFormat = "yyyyMMdd"
         return f
     }()
-    
-    // Filter dreams for selected day (String dateKey vs selectedDate)
+
     private var filteredDreams: [Dream] {
-        let selectedKey = Self.dateKeyFormatter.string(from: selectedDate)
-        return dreams.filter { $0.dateKey == selectedKey }
+        let key = Self.keyFormatter.string(from: dreamVM.selectedDate)
+        return dreamVM.dreams.filter { $0.dateKey == key }
     }
-    
+
     var body: some View {
-        // Removed NavigationView wrapper; assume parent provides NavigationStack.
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 Text("Dream Journal")
                     .font(.title.bold())
                     .padding(.horizontal)
-                
+
                 CustomCalendar(
-                    selectedDate: $selectedDate,
+                    selectedDate: $dreamVM.selectedDate,
                     dayColor: { date in
                         let cal = Calendar.current
                         if cal.isDateInToday(date) { return .yellow }
@@ -52,13 +42,18 @@ struct HomeView: View {
                     selectedBackground: .purple
                 )
                 .padding(.horizontal)
-                
+                .onChange(of: dreamVM.selectedDate) { _ in
+                    Task { await dreamVM.loadDreamsForSelectedDate() }
+                }
+
                 Text("Dreams")
                     .font(.title2.bold())
                     .padding(.horizontal)
-                
-                if filteredDreams.isEmpty {
-                    Text("No dreams for this day. Tap another date or add a new entry.")
+
+                if dreamVM.isLoading && dreamVM.dreams.isEmpty {
+                    ProgressView().padding(.horizontal)
+                } else if filteredDreams.isEmpty {
+                    Text("No dreams for this day.")
                         .font(.callout)
                         .foregroundColor(.white.opacity(0.7))
                         .padding(.horizontal)
@@ -71,15 +66,25 @@ struct HomeView: View {
                             .buttonStyle(.plain)
                         }
                     }
-                    .padding(.horizontal)
+                }
+
+                if let err = dreamVM.errorMessage {
+                    Text(err)
+                        .foregroundColor(.red)
+                        .font(.footnote)
+                        .padding(.horizontal)
                 }
             }
         }
         .background(LinearGradient.onboardingBackground.ignoresSafeArea())
         .foregroundColor(.white)
-        // Modern way to hide navigation bar for this root view only.
         .toolbar(.hidden, for: .navigationBar)
         .navigationBarBackButtonHidden(true)
+        .task(id: dreamVM.selectedDate.m()) {
+            // When month changes load monthly entry indicators
+            await dreamVM.loadMonthlyEntries(year: dreamVM.selectedDate.y(),
+                                             month: dreamVM.selectedDate.m())
+        }
     }
 }
 

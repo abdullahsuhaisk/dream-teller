@@ -53,7 +53,7 @@ struct DreamCard: View {
 
 #Preview {
     // Preview adapted to new Dream initializer
-    let sample = Dream(dateKey: "20251118",
+    let sample = Dream(id: <#String#>, dateKey: "20251118",
                        input: "I was walking through a misty forest hearing distant whispers.",
                        interpretation: "Seeking guidance / introspection",
                        title: "Walking in the woods",

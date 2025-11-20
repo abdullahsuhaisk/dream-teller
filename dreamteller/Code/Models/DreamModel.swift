@@ -1,55 +1,31 @@
-//
-//  DreamModel.swift
-//  dreamteller
-//
-//  Created by suha.isik on 31.10.2025.
-//
-import Foundation
-import FirebaseFirestore
+// Swift
+// File: `dreamteller/Code/Models/DreamAPIModels.swift`
 
-struct Dream: Identifiable, Codable {
-    var id: String
-    var dateKey: String          // yyyyMMdd string (e.g. 20251118)
-    var input: String            // Raw dream text
-    var interpretation: String?  // Optional interpretation
-    var title: String            // Display title
-    var imageName: String        // Asset name for preview image
+struct DreamEntry: Decodable {
+    let dateKey: String   // YYYYMMDD
+    let hasEntry: Bool
+}
 
-    init(id: String = UUID().uuidString,
-         dateKey: String,
-         input: String,
-         interpretation: String? = nil,
-         title: String,
-         imageName: String) {
-        self.id = id
-        self.dateKey = dateKey
-        self.input = input
-        self.interpretation = interpretation
-        self.title = title
-        self.imageName = imageName
-    }
+struct Dream: Decodable, Identifiable {
+    let id: String
+    let dateKey: String
+    let input: String
+    let title: String?        // optional per spec
+    let interpretation: String?
+    // TODO: Check it
+    let imageName: String?     // local image asset name
+}
 
-    init?(doc: DocumentSnapshot) {
-        guard let data = doc.data(),
-              let dateKey = data["dateKey"] as? String,
-              let input = data["input"] as? String,
-              let title = data["title"] as? String,
-              let imageName = data["imageName"] as? String else { return nil }
-        self.id = doc.documentID
-        self.dateKey = dateKey
-        self.input = input
-        self.interpretation = data["interpretation"] as? String
-        self.title = title
-        self.imageName = imageName
-    }
+struct DreamRequest: Encodable {
+    let dateKey: String
+    let input: String
+}
 
-    var asFirestore: [String: Any] {
-        [
-            "dateKey": dateKey,
-            "input": input,
-            "interpretation": interpretation as Any,
-            "title": title,
-            "imageName": imageName
-        ]
-    }
+struct NotificationSubscription: Codable {
+    var daily: Bool
+    var interpretation: Bool
+}
+
+struct FCMRequest: Encodable {
+    let fcmToken: String
 }

@@ -45,18 +45,33 @@ struct dreamtellerApp: App {
         FirebaseApp.configure()
     }
     @StateObject private var authVM = AuthViewModel()
+    @StateObject private var dreamVM = DreamViewModel()
     @AppStorage("hasSeenOnboarding") var hasSeenOnboarding = false
+    
     var body: some Scene {
         WindowGroup {
-            if authVM.isAuthenticated {
-                MainTabView()
-                    .environmentObject(authVM)
-            } else if hasSeenOnboarding {
-                LoginView()
-                    .environmentObject(authVM)
-            } else {
-                OnboardingView()
-                    .environmentObject(authVM)
+            Group {
+                if authVM.isAuthenticated {
+                    MainTabView()
+                } else if hasSeenOnboarding {
+                    LoginView()
+                } else {
+                    OnboardingView()
+                }
+            }
+            .environmentObject(authVM)
+            .environmentObject(dreamVM)
+            .task(id: authVM.isAuthenticated) {
+                // When auth state flips to true fetch token and preload data
+                if authVM.isAuthenticated {
+                    await authVM.fetchIDToken()
+                    dreamVM.setAuthToken(authVM.idToken)
+                    await dreamVM.loadDreamsForSelectedDate()
+                    await dreamVM.loadMonthlyEntries(year: dreamVM.selectedDate.y(),
+                                                     month: dreamVM.selectedDate.m())
+                } else {
+                    dreamVM.setAuthToken(nil)
+                }
             }
         }
     }

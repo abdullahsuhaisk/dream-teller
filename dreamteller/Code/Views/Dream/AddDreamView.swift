@@ -9,9 +9,10 @@ import SwiftUI
 
 struct AddDreamView: View {
     @Environment(\.dismiss) var dismiss // X butonuna basınca ekranı kapatmak için
-    @State private var dreamText: String = ""
+    @EnvironmentObject private var dreamVM: DreamViewModel
+    @State private var dreamText = ""
     @State private var isSaving = false
-
+    
     var body: some View {
         VStack(spacing: 20) {
             // Üst başlık ve kapama butonu
@@ -30,7 +31,7 @@ struct AddDreamView: View {
             }
             .padding(.top, 12)
             .padding(.horizontal)
-
+            
             // Yazı alanı
             ZStack(alignment: .topLeading) {
                 TextEditor(text: $dreamText)
@@ -54,9 +55,9 @@ struct AddDreamView: View {
                         .padding(.leading, 16)
                 }
             }
-
+            
             Spacer()
-
+            
             // Alt butonlar
             HStack {
                 Button(action: speakDream) {
@@ -69,9 +70,9 @@ struct AddDreamView: View {
                         .foregroundColor(.white)
                         .cornerRadius(8)
                 }
-
+                
                 Spacer()
-
+                
                 Button(action: saveDream) {
                     if isSaving {
                         ProgressView()
@@ -93,32 +94,22 @@ struct AddDreamView: View {
         }
         .background(LinearGradient.onboardingBackground.ignoresSafeArea())
     }
-
+    
     // MARK: - Actions
     private func speakDream() {
         print("🎙 Start voice input (not implemented yet)")
     }
-
+    
     private func saveDream() {
         guard !dreamText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         isSaving = true
-
-        // Simulate saving delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            print("💾 Dream saved:", dreamText)
+        Task {
+            await dreamVM.submitDreamForInterpretation(input: dreamText)
             isSaving = false
-            dismiss() // ekrandan çık
+            dismiss()
         }
     }
 }
 #Preview {
     AddDreamView()
 }
-
-
-/*.sheet(isPresented: $showNewDream) {
- NewDreamView()
- }
- */
-
-// .background(LinearGradient.onboardingBackground.ignoresSafeArea())

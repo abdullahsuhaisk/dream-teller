@@ -31,6 +31,7 @@ final class FirebaseAuthService: AuthServiceProtocol {
                 guard let uid = authResult?.user.uid else {
                     continuation.resume(throwing: AuthError.userNotFound); return
                 }
+                print("✅ Firebase signIn successful for UID: \(uid)")
                 continuation.resume(returning: uid)
             }
         }
