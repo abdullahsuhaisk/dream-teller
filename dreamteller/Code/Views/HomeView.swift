@@ -9,6 +9,10 @@ import SwiftUI
 
 struct HomeView: View {
     @EnvironmentObject var dreamVM: DreamViewModel
+    
+    init() {
+        Logger.log("HomeView initialized", level: .info)
+    }
         
     // Formatter reused for comparing dateKey
     private static let keyFormatter: DateFormatter = {
@@ -43,6 +47,7 @@ struct HomeView: View {
                 )
                 .padding(.horizontal)
                 .onChange(of: dreamVM.selectedDate) { _ in
+                    // Logger.log("Date changed to: \(dreamVM.selectedDate)", level: .info)
                     Task { await dreamVM.loadDreamsForSelectedDate() }
                 }
 
@@ -64,6 +69,9 @@ struct HomeView: View {
                                 DreamCard(dream: dream)
                             }
                             .buttonStyle(.plain)
+                            .simultaneousGesture(TapGesture().onEnded {
+                                Logger.log("Dream card tapped: \(dream.title ?? "Untitled")", level: .info)
+                            })
                         }
                     }
                 }
@@ -80,7 +88,11 @@ struct HomeView: View {
         .foregroundColor(.white)
         .toolbar(.hidden, for: .navigationBar)
         .navigationBarBackButtonHidden(true)
+        .onAppear {
+            // Logger.log("HomeView appeared", level: .info)
+        }
         .task(id: dreamVM.selectedDate.m()) {
+            // Logger.log("Loading monthly entries for month: \(dreamVM.selectedDate.m())", level: .info)
             // When month changes load monthly entry indicators
             await dreamVM.loadMonthlyEntries(year: dreamVM.selectedDate.y(),
                                              month: dreamVM.selectedDate.m())

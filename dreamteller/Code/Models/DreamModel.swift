@@ -3,7 +3,7 @@
 
 struct DreamEntry: Decodable {
     let dateKey: String   // YYYYMMDD
-    let hasEntry: Bool
+    let hasEntries: Bool
 }
 
 struct Dream: Decodable, Identifiable {
@@ -12,8 +12,6 @@ struct Dream: Decodable, Identifiable {
     let input: String
     let title: String?        // optional per spec
     let interpretation: String?
-    // TODO: Check it
-    let imageName: String?     // local image asset name
 }
 
 struct DreamRequest: Encodable {

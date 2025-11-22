@@ -12,11 +12,14 @@ struct LoginView: View {
     @EnvironmentObject var vm: AuthViewModel
     
     @State private var isShowingMainApp = false
-    
-    @State private var showPassword: Bool = false
     @State private var isShowingRegister = false
     @State private var isShowingForgotPassword = false
+    @State private var showPassword: Bool = false
     
+    init() {
+        // Logger.log("LoginView initialized", level: .info)
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -46,10 +49,7 @@ struct LoginView: View {
                         
                         // Giriş alanları
                         VStack(spacing: 16) {
-                            // Email Field
                             InputField(text: $vm.email, placeholder: "Email", keyboard: .emailAddress)
-                            
-                            // Password Field (göster/gizle)
                             PasswordField(text: $vm.password, placeholder: "Password", showPassword: $showPassword)
                         }
                         .padding(.horizontal, 18)
@@ -59,6 +59,7 @@ struct LoginView: View {
                         HStack {
                             Spacer()
                             Button(action: {
+                                // Logger.log("Forgot password button tapped", level: .info)
                                 isShowingForgotPassword = true
                                 print("Forgot password tapped")
                             }) {
@@ -74,6 +75,7 @@ struct LoginView: View {
                         
                         // Login butonu
                         Button(action: {
+                            // Logger.log("Login button tapped", level: .info)
                             login()
                         }) {
                             if vm.isLoading {
@@ -104,6 +106,7 @@ struct LoginView: View {
                         
                         // 👇 The navigation link to Sign Up
                         Button(action: {
+                            // Logger.log("Sign up navigation button tapped", level: .info)
                             isShowingRegister = true
                         }) {
                             Text("Don’t have an account? Sign Up")
@@ -119,22 +122,26 @@ struct LoginView: View {
                     }
                 }
                 
-                // Hidden navigation trigger to MainTabView after login
-                .hidden()
             }
+        }
+        .onAppear {
+            // Logger.log("LoginView appeared", level: .info)
         }
     }
     
     // MARK: - Actions
     private func login() {
+        // Logger.log("Login action started for email: \(vm.email)", level: .info)
         print("Login tapped")
         
         Task {
             print("Attempting to log in with email: \(vm.email)")
             await vm.signIn()
+            // Logger.log("Login action completed, authenticated: \(vm.isAuthenticated)", level: .info)
             print($vm.isAuthenticated)
         }
-    }}
+    }
+}
 
 #Preview {
     LoginView()

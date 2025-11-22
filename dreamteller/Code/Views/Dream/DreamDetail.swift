@@ -23,7 +23,7 @@ struct DreamDetailView: View {
                         .cornerRadius(16)
                     
                     Text(formattedDate(from: dream.dateKey))
-                        .font(.subheadline)
+                        .font(.title3) // Increased from .subheadline
                         .fontWeight(.semibold)
                         .foregroundColor(.white)
                         .padding(.horizontal, 12)
@@ -37,18 +37,18 @@ struct DreamDetailView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     Text(dream.input)
                         .foregroundColor(.white.opacity(0.9))
-                        .font(.body)
+                        .font(.title3) // Increased from .body
                         .multilineTextAlignment(.leading)
                     
                     Divider().background(Color.white.opacity(0.2))
                     
                     Text("Interpretation")
-                        .font(.headline)
+                        .font(.title2) // Increased from .headline
                         .foregroundColor(.white)
                     
                     Text(dream.interpretation ?? "No interpretation available.")
                         .foregroundColor(.white.opacity(0.9))
-                        .font(.body)
+                        .font(.title3) // Increased from .body
                         .multilineTextAlignment(.leading)
                 }
                 .padding(.horizontal)
@@ -56,7 +56,7 @@ struct DreamDetailView: View {
                 // MARK: - Share Button
                 Button(action: shareDream) {
                     Text("Share")
-                        .font(.headline)
+                        .font(.title2) // Increased from .headline
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
@@ -68,7 +68,7 @@ struct DreamDetailView: View {
             }
         }
         .background(LinearGradient.onboardingBackground.ignoresSafeArea())
-        .navigationTitle(dream.title)
+        .navigationTitle(dream.title ?? "Dream Detail")
         .navigationBarTitleDisplayMode(.inline)
     }
     
@@ -98,11 +98,9 @@ struct DreamDetailView: View {
 
 #Preview {
     let mock = Dream(
-        dateKey: "20251118",
+        id: "asdasdasc23rfdss", dateKey: "20251118",
         input: "I was flying over a luminescent forest while a whale guided me. The sky was filled with vibrant colors. I felt a sense of peace and joy. I saw a path that led me to a beautiful beach.",
-        interpretation: "Symbolizes guidance, freedom, and emerging intuition. Represents a journey towards self-discovery and emotional depth.",
-        title: "Forest Flight",
-        imageName: "dream1"
+        title: "Forest Flight", interpretation: "Symbolizes guidance, freedom, and emerging intuition. Represents a journey towards self-discovery and emotional depth."
     )
     NavigationStack {
         DreamDetailView(dream: mock)

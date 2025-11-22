@@ -27,7 +27,7 @@ struct DreamCard: View {
             .cornerRadius(16)
             
             VStack(alignment: .leading, spacing: 6) {
-                Text(dream.title)
+                Text(dream.title ?? "Dream title")
                     .font(.headline.bold())
                     .foregroundColor(.white)
                 Text(dream.dateKey) // show date key string
@@ -53,10 +53,8 @@ struct DreamCard: View {
 
 #Preview {
     // Preview adapted to new Dream initializer
-    let sample = Dream(id: <#String#>, dateKey: "20251118",
+    let sample = Dream(id: "asasdasdasdasdas", dateKey: "20251118",
                        input: "I was walking through a misty forest hearing distant whispers.",
-                       interpretation: "Seeking guidance / introspection",
-                       title: "Walking in the woods",
-                       imageName: "dream1")
+                       title: "Walking in the woods", interpretation: "Seeking guidance / introspection")
     DreamCard(dream: sample)
 }

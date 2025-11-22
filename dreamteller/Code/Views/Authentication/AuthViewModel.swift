@@ -7,6 +7,7 @@
 
 
 import Foundation
+import Firebase
 import SwiftUI
 import FirebaseAuth
 
@@ -199,6 +200,7 @@ final class AuthViewModel: ObservableObject {
     
     // MARK: - Actions
     func signIn() async {
+        Logger.log("Attempting sign in for email: \(email)", level: .info)
         errorMessage = nil
         if let validationError = validateSignIn() { errorMessage = validationError.localizedDescription; return }
         isLoading = true
@@ -207,17 +209,19 @@ final class AuthViewModel: ObservableObject {
             let uid = try await authService.signIn(email: email, password: password)
             userId = uid
             isAuthenticated = true
-            print("✅ Signed in with UID: \(uid)")
+            Logger.log("Sign in successful for user: \(uid)", level: .info)
+            await fetchIDToken()
         } catch let firebaseErr as NSError {
             errorMessage = mapFirebaseError(firebaseErr).localizedDescription
-            print("❌ Sign in failed: \(errorMessage ?? "Unknown error")")
+            Logger.log("Sign in failed for email: \(email), error: \(errorMessage ?? "Unknown error")", level: .error)
         } catch {
             errorMessage = error.localizedDescription
-            print("❌ Sign in failed: \(error.localizedDescription)")
+            Logger.log("Sign in failed: \(error.localizedDescription)", level: .error)
         }
     }
     
     func signUp() async {
+        // Logger.log("Attempting registration for email: \(email)", level: .info)
         errorMessage = nil
         if let validationError = validateSignUp() { errorMessage = validationError.localizedDescription; return }
         isLoading = true
@@ -226,14 +230,19 @@ final class AuthViewModel: ObservableObject {
             let uid = try await authService.signUp(name: name, email: email, password: password)
             userId = uid
             isAuthenticated = true
+            // Logger.log("Registration successful for user: \(uid)", level: .info)
+            await fetchIDToken()
         } catch let firebaseErr as NSError {
             errorMessage = mapFirebaseError(firebaseErr).localizedDescription
+            // Logger.log("Registration failed for email: \(email), error: \(errorMessage ?? "Unknown error")", level: .error)
         } catch {
             errorMessage = error.localizedDescription
+            // Logger.log("Registration failed: \(error.localizedDescription)", level: .error)
         }
     }
     
     func signOut() async {
+        // Logger.log("Signing out user", level: .info)
         errorMessage = nil
         isLoading = true
         defer { isLoading = false }
@@ -245,14 +254,18 @@ final class AuthViewModel: ObservableObject {
             email = ""
             password = ""
             repeatPassword = ""
+            // Logger.log("Sign out successful", level: .info)
         } catch let firebaseErr as NSError {
             errorMessage = mapFirebaseError(firebaseErr).localizedDescription
+            // Logger.log("Sign out failed: \(errorMessage)", level: .error)
         } catch {
             errorMessage = error.localizedDescription
+            // Logger.log("Sign out failed: \(error.localizedDescription)", level: .error)
         }
     }
     
     func sendPasswordReset() async {
+        // Logger.log("Sending password reset email to: \(email)", level: .info)
         errorMessage = nil
         infoMessage = nil
         
@@ -260,6 +273,8 @@ final class AuthViewModel: ObservableObject {
             errorMessage = AuthError.invalidEmail.localizedDescription
             return
         }
+        isLoading = true
+        defer { isLoading = false }
         do {
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
                 Auth.auth().sendPasswordReset(withEmail: email) { error in
@@ -268,16 +283,20 @@ final class AuthViewModel: ObservableObject {
                 }
             }
             infoMessage = "Password reset email sent."
+            // Logger.log("Password reset email sent to: \(email)", level: .info)
         } catch {
             errorMessage = mapFirebaseError(error).localizedDescription
+            // Logger.log("Failed to send password reset email to: \(email), error: \(error)", level: .error)
         }
     }
     
     func sendEmailVerification() async {
+        // Logger.log("Sending email verification", level: .info)
         errorMessage = nil
         infoMessage = nil
         guard let user = Auth.auth().currentUser else {
             errorMessage = AuthError.noCurrentUser.localizedDescription
+            // Logger.log("No current user when sending email verification", level: .error)
             return
         }
         do {
@@ -288,13 +307,19 @@ final class AuthViewModel: ObservableObject {
                 }
             }
             infoMessage = "Verification email sent."
+            // Logger.log("Verification email sent to: \(user.email ?? "unknown email")", level: .info)
         } catch {
             errorMessage = mapFirebaseError(error).localizedDescription
+            // Logger.log("Failed to send verification email, error: \(error)", level: .error)
         }
     }
     
     func reloadUser() async {
-        guard let user = Auth.auth().currentUser else { return }
+        // Logger.log("Reloading user data", level: .info)
+        guard let user = Auth.auth().currentUser else {
+            // Logger.log("No current user to reload", level: .error)
+            return
+        }
         do {
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
                 user.reload { error in
@@ -305,26 +330,27 @@ final class AuthViewModel: ObservableObject {
             displayName = user.displayName
             emailVerified = user.isEmailVerified
             await fetchIDToken(forceRefresh: true)
+            // Logger.log("User data reloaded", level: .info)
         } catch {
             errorMessage = mapFirebaseError(error).localizedDescription
+            // Logger.log("Failed to reload user data, error: \(error)", level: .error)
         }
     }
     
     func fetchIDToken(forceRefresh: Bool = false) async {
-        guard let user = Auth.auth().currentUser else { return }
+        // Logger.log("Fetching Firebase ID token", level: .info)
+        guard let user = Auth.auth().currentUser else {
+            // Logger.log("No current user found when fetching ID token", level: .error)
+            idToken = nil
+            return
+        }
         do {
-            let token: String = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<String, Error>) in
-                user.getIDTokenForcingRefresh(forceRefresh) { token, error in
-                    if let error = error { continuation.resume(throwing: error); return }
-                    guard let token = token else {
-                        continuation.resume(throwing: AuthError.unknown("Token missing")); return
-                    }
-                    continuation.resume(returning: token)
-                }
-            }
+            let token = try await user.getIDToken()
             idToken = token
+            // Logger.log("Fetched ID token: \(token.prefix(8))...", level: .info)
         } catch {
-            errorMessage = mapFirebaseError(error).localizedDescription
+            // Logger.log("Error fetching ID token: \(error)", level: .error)
+            idToken = nil
         }
     }
 }
